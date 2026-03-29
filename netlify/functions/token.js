@@ -1,6 +1,3 @@
-const AccessToken = require('twilio').jwt.AccessToken;
-const VoiceGrant = AccessToken.VoiceGrant;
-
 exports.handler = async function(event, context) {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -21,20 +18,41 @@ exports.handler = async function(event, context) {
   const TWIML_APP_SID = 'AP9818773ccd15d20c069d0d8da625c62d';
 
   try {
-    const token = new AccessToken(ACCOUNT_SID, API_KEY, API_SECRET, {
-      identity: 'web-user-' + Date.now(),
-      ttl: 3600
-    });
+    const twilio = require('twilio');
+    const AccessToken = twilio.jwt.AccessToken;
+    const VoiceGrant = AccessToken.VoiceGrant;
 
     const voiceGrant = new VoiceGrant({
       outgoingApplicationSid: TWIML_APP_SID,
       incomingAllow: true
     });
 
+    const token = new AccessToken(
+      ACCOUNT_SID,
+      API_KEY,
+      API_SECRET,
+      { identity: 'web-' + Date.now() }
+    );
+
     token.addGrant(voiceGrant);
+    token.ttl = 3600;
 
     return {
       statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        token: token.toJwt(),
+        room: room
+      })
+    };
+  } catch(e) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: e.message })
+    };
+  }
+};      statusCode: 200,
       headers,
       body: JSON.stringify({
         token: token.toJwt(),
